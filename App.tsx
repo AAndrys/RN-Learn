@@ -1,13 +1,8 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
+import React, {useEffect, useRef} from 'react';
 import type {PropsWithChildren} from 'react';
 import {
+  Animated,
+  FlatList,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -24,6 +19,8 @@ import {
   LearnMoreLinks,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
+import ProductCard from './src/components/ProductCard';
+import {TEMP_PRODUCTS_CARDS} from './src/constants/TEMP_DATA';
 
 type SectionProps = PropsWithChildren<{
   title: string;
@@ -31,6 +28,7 @@ type SectionProps = PropsWithChildren<{
 
 function Section({children, title}: SectionProps): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
+
   return (
     <View style={styles.sectionContainer}>
       <Text
@@ -55,12 +53,16 @@ function Section({children, title}: SectionProps): React.JSX.Element {
   );
 }
 
-function App(): React.JSX.Element {
+const App = (): React.JSX.Element => {
+  const scrollY = useRef(new Animated.Value(0)).current;
+
   const isDarkMode = useColorScheme() === 'dark';
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
+
+  const ITEM_SIZE = 522;
 
   return (
     <SafeAreaView style={backgroundStyle}>
@@ -68,7 +70,9 @@ function App(): React.JSX.Element {
         barStyle={isDarkMode ? 'light-content' : 'dark-content'}
         backgroundColor={backgroundStyle.backgroundColor}
       />
-      <ScrollView
+
+      <Section title="Welcome to the shop!">Check our sweet images!</Section>
+      {/* <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         style={backgroundStyle}>
         <Header />
@@ -91,10 +95,69 @@ function App(): React.JSX.Element {
           </Section>
           <LearnMoreLinks />
         </View>
-      </ScrollView>
+      </ScrollView> */}
+
+      <Animated.FlatList
+        data={TEMP_PRODUCTS_CARDS}
+        onScroll={Animated.event(
+          [{nativeEvent: {contentOffset: {y: scrollY}}}],
+          {useNativeDriver: true},
+        )}
+        keyExtractor={(item, index) => item.title + index}
+        contentContainerStyle={{padding: 20}}
+        renderItem={({item, index}) => {
+          const inputRange = [
+            -1,
+            0,
+            ITEM_SIZE * index,
+            ITEM_SIZE * (index + 2),
+          ];
+
+          const opacityInputRange = [
+            -1,
+            0,
+            ITEM_SIZE * index,
+            ITEM_SIZE * (index + 1),
+          ];
+
+          const scale = scrollY.interpolate({
+            inputRange,
+            outputRange: [1, 1, 1, 0],
+            extrapolate: 'clamp',
+          });
+
+          const opacity = scrollY.interpolate({
+            inputRange: opacityInputRange,
+            outputRange: [1, 1, 1, 0],
+            extrapolate: 'clamp',
+          });
+
+          return (
+            <Animated.View
+              style={{
+                opacity,
+                transform: [{scale}],
+                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                shadowColor: '#000',
+                shadowOffset: {
+                  width: 0,
+                  height: 10,
+                },
+                shadowOpacity: 1,
+                shadowRadius: 10,
+                elevation: 10,
+                marginBottom: 20,
+                padding: 10,
+                borderRadius: 10,
+              }}>
+              <ProductCard {...item} />
+            </Animated.View>
+          );
+        }}
+      />
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   sectionContainer: {
